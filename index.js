@@ -15,12 +15,22 @@ const users = {};
 
 io.on('connection', (socket) => {
   socket.on('user_connected', (userData) => {
+    console.log(userData.name + ' connected!');
     socket.emit('get_connected_users', users);
     socket.broadcast.emit('user_joined', userData);
     users[socket.id] = userData;
   });
 
+  socket.on('new_message', (messageData) => {
+    const socketIds = Object.keys(users);
+    const toIndex = Object.values(users).findIndex(
+      (user) => user.id === messageData.to
+    );
+    socket.to(socketIds[toIndex]).emit('receive_message', messageData);
+  });
+
   socket.on('disconnect', () => {
+    console.log(users[socket.id].name + ' disconnected!');
     socket.broadcast.emit('user_left', users[socket.id]);
     delete users[socket.id];
   });
